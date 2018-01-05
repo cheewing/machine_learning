@@ -91,14 +91,16 @@ def file2matrix(filename):
         # strip()去除\r\n，split('\t')按\t划分字符串，得到一个list
         listFromLine = line.strip().split('\t')
         dataMat[index,:] = listFromLine[0:3];
-        #vectorOfLabels.append(int(lineData[-1]))
+        classLabelVector.append(int(listFromLine[-1]))
         #根据文本中标记的喜欢的程度进行分类,1代表不喜欢,2代表魅力一般,3代表极具魅力
+        '''
         if listFromLine[-1] == 'didntLike':
             classLabelVector.append(1)
         elif listFromLine[-1] == 'smallDoses':
             classLabelVector.append(2)
         elif listFromLine[-1] == 'largeDoses':
             classLabelVector.append(3)
+        '''
         index += 1      # 此处不能忘
 
     return array(dataMat), classLabelVector
@@ -118,20 +120,20 @@ Modify:
 """
 def autoNorm(dataSet):
     # 每列取最大值，得最大值向量
-    maxColVector = dataSet.max(0)
+    maxVals = dataSet.max(0)
     # 每列取最小值，得最小值向量
-    minColVector = dataSet.min(0)
+    minVals = dataSet.min(0)
     # 最大值最小值的范围
-    ranges = maxColVector - minColVector
+    ranges = maxVals - minVals
     # shape(dataSet)返回dataSet的行列数
     normDataSet = zeros(shape(dataSet))
     # dataSet行数
     m = dataSet.shape[0]
     # 减去最小值
-    normDataSet = dataSet - tile(minColVector, (m, 1))
+    normDataSet = dataSet - tile(minVals, (m, 1))
     # normDataSet／ranges矩阵
     normDataSet = normDataSet / tile(ranges, (m, 1))
-    return normDataSet
+    return normDataSet, ranges, minVals
 
 """
 函数说明:可视化数据
@@ -204,10 +206,102 @@ def showdatas(datingDataMat, datingLabels):
     #显示图片
     plt.show()
 
+"""
+函数说明:分类器测试函数
+
+Parameters:
+    无
+Returns:
+    normDataSet - 归一化后的特征矩阵
+    ranges - 数据范围
+    minVals - 数据最小值
+
+Modify:
+    2017-03-24
+"""
+def datingClassTest():
+    # 打开的文件名
+    filename = "datingTestSet2.txt"
+    # 打开并处理数据
+    datingDataMat, datingLabels = file2matrix(filename)
+    # 取所有数据的10%
+    hRatio = 0.10
+    # 归一化
+    normMat, ranges, minVals = autoNorm(datingDataMat)
+    # 约会数据总数
+    m = normMat.shape[0]
+    print datingDataMat.shape
+    print m
+    # 测试数据总数
+    numTestVecs = int(m * hRatio)
+    print "test" ,
+    # 分类错误计数
+    errorCount = 0.0
+
+    for i in range(numTestVecs):
+        classifierResult = classify0(normMat[i,:], normMat[numTestVecs:m, :], datingLabels[numTestVecs:m], 4)
+        print("分类结果:%d\t真实类别:%d" % (classifierResult, datingLabels[i]))
+        if classifierResult != datingLabels[i]:
+            errorCount += 1.0
+
+    print("错误率:%f%%" %(errorCount / float(numTestVecs) * 100))
+
+"""
+函数说明:通过输入一个人的三维特征,进行分类输出
+
+Parameters:
+    无
+Returns:
+    无
+
+Modify:
+    2017-03-24
+"""
+def classifyPerson():
+    #输出结果
+    resultList = ['讨厌','有些喜欢','非常喜欢']
+    #三维特征用户输入
+    precentTats = float(input("玩视频游戏所耗时间百分比:"))
+    ffMiles = float(input("每年获得的飞行常客里程数:"))
+    iceCream = float(input("每周消费的冰激淋公升数:"))
+    #打开的文件名
+    filename = "datingTestSet2.txt"
+    #打开并处理数据
+    datingDataMat, datingLabels = file2matrix(filename)
+    #训练集归一化
+    normMat, ranges, minVals = autoNorm(datingDataMat)
+    #生成NumPy数组,测试集
+    inArr = array([precentTats, ffMiles, iceCream])
+    #测试集归一化
+    norminArr = (inArr - minVals) / ranges
+    #返回分类结果
+    classifierResult = classify0(norminArr, normMat, datingLabels, 3)
+    #打印结果
+    print("你可能%s这个人" % (resultList[classifierResult-1]))
+
+"""
+函数说明:将32x32的二进制图像转换为1x1024向量。
+
+Parameters:
+    filename - 文件名
+Returns:
+    returnVect - 返回的二进制图像的1x1024向量
+
+Modify:
+    2017-07-15
+"""
+def img2vector(filename):
+    returnVect = zeros((1, 1024))
+    fr = open(filename)
+
+    for line in fr.readlines():
+        returnVect.extend(line)
+    return returnVect
+
 if __name__ == '__main__':
-    #创建数据集
+    # 创建数据集
     group, labels = createDataSet()
-    #打印数据集
+    # 打印数据集
     print group
     print labels
     test = [101, 20]
@@ -227,5 +321,12 @@ if __name__ == '__main__':
     #datingDataMat, datingLabels = file2matrix(filename)
     #showdatas(datingDataMat, datingLabels)
 
-    nornDataSet = autoNorm(data)
+    nornDataSet, ranges, minVals = autoNorm(data)
     print nornDataSet
+    print ranges
+    print minVals
+
+    #classifyPerson()
+
+    vect = img2vector('0_0.txt')
+    print vect
