@@ -4,7 +4,8 @@ import operator
 from matplotlib.font_manager import FontProperties
 import matplotlib.lines as mlines
 import matplotlib.pyplot as plt
-
+from os import listdir
+from sklearn.neighbors import KNeighborsClassifier as kNN
 """
 函数说明:创建数据集
 
@@ -293,10 +294,72 @@ Modify:
 def img2vector(filename):
     returnVect = zeros((1, 1024))
     fr = open(filename)
-
-    for line in fr.readlines():
-        returnVect.extend(line)
+    # 按行读取
+    for i in range(32):
+        # 读一行数据
+        lineStr = fr.readline()
+        # 每一行的前32个元素依次添加到returnVector中
+        for j in range(32):
+            returnVect[0, 32 * i + j] = int(lineStr[j])
+    # 返回转换后的1*1024向量
     return returnVect
+
+"""
+函数说明:手写数字分类测试
+
+Parameters:
+    无
+Returns:
+    无
+
+Modify:
+    2017-07-15
+"""
+def handwritingClassTest():
+    # 测试集的Labels
+    hwLabels = []
+    # 返回traingDigits目录下的文件名
+    trainningFileList = listdir('trainingDigits')
+    # 返回文件夹下文件的个数
+    m = len(trainningFileList)
+    # 初始化训练的Mat矩阵，测试集
+    trainingMat = zeros((m, 1024))
+    # 从文件名中解析出训练集的类别
+    for i in range(m):
+        # 获得文件的名字
+        fileNameStr = trainningFileList[i]
+        # 获得分类的数字
+        classNumStr = int(fileNameStr.split('_')[0])
+        # 将获得的类别添加到hwLabels中
+        hwLabels.append(classNumStr)
+        # 将每一个文件的1*1024数据存储到trainningMat矩阵中
+        trainingMat[i, :] = img2vector('trainingDigits/%s' % (fileNameStr))
+    #构建kNN分类器
+    neigh = kNN(n_neighbors = 3, algorithm = 'auto')
+    #拟合模型，trainningMat为测试矩阵，hwLabels为对应的标签
+    neigh.fit(trainingMat, hwLabels)
+    #返回testDigits目录下的文件列表
+    testFileList = listdir('testDigits')
+    #错误检测计数
+    errorCount = 0.0
+    #测试数据的数量
+    mTest = len(testFileList)
+    #从文件中解析出测试集的类别并进行分类测试
+    for i in range(mTest):
+        #获得文件的名字
+        fileNameStr = testFileList[i]
+        #获得分类的数字
+        classNumStr = int(fileNameStr.split('_')[0])
+        #获得测试集的1*1024向量，用于训练
+        vectorUnderTest = img2vector('testDigits/%s' % (fileNameStr))
+        #获得预测结果
+        #classfierResult = classify0(vectorUnderTest, trainingMat, hwLabels, 3)
+        classfierResult = neigh.predict(vectorUnderTest)
+        #print "the claßßssfier came back with: %d, the real answer is: %d" % (classfierResult, classNumStr)
+        if (classfierResult != classNumStr): errorCount += 1.0
+    print "\nthe total number of errors is: %d" % errorCount
+    print "\nthe total error rate is: %f" % (errorCount/float(mTest))
+
 
 if __name__ == '__main__':
     # 创建数据集
@@ -307,13 +370,13 @@ if __name__ == '__main__':
     test = [101, 20]
 
     # kNN分类
-    test_class = classify0(test, group, labels, 3)
+    #test_class = classify0(test, group, labels, 3)
 
     # 打印分类结果
-    print test_class
+    #print test_class
 
-    data, label = file2matrix('datingTestSet2.txt')
-    print data, label
+    #data, label = file2matrix('datingTestSet2.txt')
+    #print data, label
 
     #打开的文件名
     #filename = "datingTestSet.txt"
@@ -321,12 +384,14 @@ if __name__ == '__main__':
     #datingDataMat, datingLabels = file2matrix(filename)
     #showdatas(datingDataMat, datingLabels)
 
-    nornDataSet, ranges, minVals = autoNorm(data)
-    print nornDataSet
-    print ranges
-    print minVals
+    #nornDataSet, ranges, minVals = autoNorm(data)
+    #print nornDataSet
+    #print ranges
+    #print minVals
 
     #classifyPerson()
 
-    vect = img2vector('0_0.txt')
-    print vect
+    #vect = img2vector('testDigits/0_13.txt')
+    #print vect[0, 32:63]
+
+    handwritingClassTest()
