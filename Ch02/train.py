@@ -84,20 +84,46 @@ def datingClassTestSklearn():
 	print "the total errorCount is %d" % errorCount
 	print "the total error rate is %f" % (errorCount / float(mTest))
 
+def img2vector(filename):
+	returnVec = np.zeros((1, 1024))
+	fr = open(filename)
+	for i in range(32):
+		line = fr.readline()
+		for j in range(32):
+			returnVec[0, i*32+j] = int(line[j])
+	return returnVec
 
 def handwritingClassTest():
 	from os import listdir
+	from sklearn.neighbors import KNeighborsClassifier as kNN
 	# 获取训练数据
 	# 获取训练样本文件集合
 	trainFileList = listdir('trainingDigits')
 	dataSize = len(trainFileList)
-	trainMat = np.zeros((dataSize, 3))
+	trainMat = np.zeros((dataSize, 1024))
 	trainLabelVec = []
-	for filename in trainFileList:
+	for i in range(dataSize):
+		filename = trainFileList[i]
 		classNumber = int(filename.split('_')[0])
-
+		trainLabelVec.append(classNumber)
+		trainMat[i,:] = img2vector('trainingDigits/%s' % filename)
+	neigh = kNN(n_neighbors = 3, algorithm = 'auto')
+	neigh.fit(trainMat, trainLabelVec)
 	# 获取测试样本文件集合
 	testFileList = listdir('testDigits')
+	mTest = len(testFileList)
+	errorCount = 0
+	for i in range(mTest):
+		filename = testFileList[i]
+		classNumber = int(filename.split('_')[0])
+		testVec = img2vector('testDigits/%s' % filename)
+		#classifierResult = classify0(testVec, trainMat, trainLabelVec, 3)
+		classifierResult = neigh.predict(testVec)
+		print "the classifier result is %d, and the real class is %d" % (classifierResult, classNumber)
+		if classifierResult != classNumber:
+			errorCount += 1.0
+	print "the total error count is: %d" % errorCount
+	print "the total error rate is: %f" % (errorCount / float(mTest))
 
 def testfile2matrix():
 	filename = 'datingTestSet2.txt'
@@ -107,4 +133,4 @@ def testfile2matrix():
 
 
 if __name__ == '__main__':
-	datingClassTestSklearn()
+	handwritingClassTest()
