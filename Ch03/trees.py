@@ -41,7 +41,7 @@ def createDataSet():
             [2, 1, 0, 1, 'yes'],
             [2, 1, 0, 2, 'yes'],
             [2, 0, 0, 0, 'no']]
-    labels = ['年龄', '有工作', '有自己的房子', '信贷情况']        #特征标签
+    labels = ['age', 'have job', 'have house', 'loan']        #特征标签
     return dataSet, labels                #返回数据集和分类属性
 
 """
@@ -61,9 +61,7 @@ def calcShannonEnt(dataSet):
     labelCounts = {}
     for features in dataSet:
         featLabels = features[-1]
-        if featLabels not in labelCounts:
-            labelCounts[featLabels] = 0
-        labelCounts[featLabels] += 1
+        labelCounts[featLabels] = labelCounts.get(featLabels, 0) + 1
     shannonEnt = 0.0
     for key in labelCounts:
         prob = float(labelCounts[key]) / numEntries
@@ -407,6 +405,12 @@ def createPlot(inTree):
     
 
 if __name__ == '__main__':
+    dataSet, labels = createDataSet()
+    featLabels = []
+    myTree = createTree(dataSet, labels, featLabels)
+    print(myTree)
+    createPlot(myTree)  
+    '''
     import pandas as pd
     from sklearn.preprocessing import LabelEncoder
 
@@ -433,3 +437,4 @@ if __name__ == '__main__':
     for col in lenses_pd.columns:                                            #为每一列序列化
         lenses_pd[col] = le.fit_transform(lenses_pd[col])
     print(lenses_pd)
+    '''
